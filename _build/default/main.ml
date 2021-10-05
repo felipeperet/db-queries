@@ -8,7 +8,7 @@ type data_card = string array
 type data_base = { card_index : string -> int ;
                    data : data_card list }
 
-(* access to the field n of a card c *)
+(* access to the field of a card *)
 let field base name =
   let i = base.card_index name in fun (card : data_card) -> card.(i)
 
@@ -27,4 +27,17 @@ let mk_index list_names =
    let rec make_enum a b = if a > b then [] else a::(make_enum (a+1) b) in
    let list_index =  (make_enum 0 ((List.length list_names) - 1)) in
    let assoc_index_name = (List.zip_exn list_names list_index)  in
-     function name -> List.Assoc.find ~equal:String.equal assoc_index_name name
+   function name -> List.Assoc.find_exn ~equal:String.equal assoc_index_name name
+
+(* read a file of the given format *)
+let read_base filename =
+   let channel = Stdio.In_channel.create filename in
+   let split_line = String.split ~on:':' in
+   let list_names = String.split ~on:'|' (Stdio.In_channel.input_line_exn channel) in
+   let rec read_file () =
+     try
+       let data = Array.of_list (split_line (Stdio.In_channel.input_line_exn channel )) in
+         data :: (read_file ())
+     with End_of_file ->  Stdio.In_channel.close channel ; []
+   in
+     { card_index = mk_index list_names ; data = read_file () }
