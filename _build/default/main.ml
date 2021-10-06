@@ -29,15 +29,31 @@ let mk_index list_names =
    let assoc_index_name = (List.zip_exn list_names list_index)  in
    function name -> List.Assoc.find_exn ~equal:String.equal assoc_index_name name
 
-(* read a file of the given format *)
+(* function that reads a file of the given format *)
 let read_base filename =
    let channel = Stdio.In_channel.create filename in
    let split_line = String.split ~on:':' in
    let list_names = String.split ~on:'|' (Stdio.In_channel.input_line_exn channel) in
    let rec read_file () =
      try
-       let data = Array.of_list (split_line (Stdio.In_channel.input_line_exn channel )) in
+       let data = Array.of_list (split_line (Stdio.In_channel.input_line_exn channel)) in
          data :: (read_file ())
      with End_of_file ->  Stdio.In_channel.close channel ; []
    in
-     { card_index = mk_index list_names ; data = read_file () }
+   { card_index = mk_index list_names ; data = read_file () }
+
+(* opening the database *)
+let base_ex = read_base "association.dat"
+
+(* The goal of database processing is to obtain a state of the database.
+ * Building such a state may be decomposed into three steps:
+ *
+ * 1. selecting, according to some given criterion, a set of cards;
+ * 2. processing each of the selected cards;
+ * 3. processing all the data collected on the cards. *)
+
+(* selection criteria *)
+
+(* for string fields *)
+let eq_sfield db s n dc = (s (phys_equal) (field db n dc))
+(* let nonempty_sfield db n dc = ("" != (field db n dc)) *)
