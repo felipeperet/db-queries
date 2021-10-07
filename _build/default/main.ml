@@ -1,4 +1,5 @@
 open Base
+open Stdio
 
 exception Not_found
 
@@ -25,20 +26,20 @@ let last_name = List.map ~f:(field base_ex "lastName") base_ex.data
  * corresponding to its position in the list *)
 let mk_index list_names =
    let rec make_enum a b = if a > b then [] else a::(make_enum (a+1) b) in
-   let list_index =  (make_enum 0 ((List.length list_names) - 1)) in
+   let list_index = (make_enum 0 ((List.length list_names) - 1)) in
    let assoc_index_name = (List.zip_exn list_names list_index)  in
    function name -> List.Assoc.find_exn ~equal:String.equal assoc_index_name name
 
 (* function that reads a file of the given format *)
 let read_base filename =
-   let channel = Stdio.In_channel.create filename in
+   let channel = In_channel.create filename in
    let split_line = String.split ~on:':' in
-   let list_names = String.split ~on:'|' (Stdio.In_channel.input_line_exn channel) in
+   let list_names = String.split ~on:'|' (In_channel.input_line_exn channel) in
    let rec read_file () =
      try
-       let data = Array.of_list (split_line (Stdio.In_channel.input_line_exn channel)) in
+       let data = Array.of_list (split_line (In_channel.input_line_exn channel)) in
          data :: (read_file ())
-     with End_of_file ->  Stdio.In_channel.close channel ; []
+     with End_of_file ->  In_channel.close channel ; []
    in
    { card_index = mk_index list_names ; data = read_file () }
 
@@ -55,5 +56,8 @@ let base_ex = read_base "association.dat"
 (* selection criteria *)
 
 (* for string fields *)
-let eq_sfield db s n dc = (s (phys_equal) (field db n dc))
-(* let nonempty_sfield db n dc = ("" != (field db n dc)) *)
+let eq_sfield db s n dc = ((phys_equal) s (field db n dc))
+let nonempty_sfield db n dc = not (phys_equal "" (field db n dc))
+
+(* for float field *)
+let tst_ffield r db (v : bool) n dc = r v (Float.of_string (field db n dc))

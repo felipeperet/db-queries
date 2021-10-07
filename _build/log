@@ -1,10 +1,10 @@
 # dune build main.exe
 # OCAMLPARAM: unset
 # Workspace root: /home/peret/projects/db-queries
-$ /usr/bin/nproc > /tmp/dune1bc056.output 2> /dev/null
+$ /usr/bin/nproc > /tmp/dune0b57a2.output 2> /dev/null
 # Auto-detected concurrency: 8
 # disable binary cache
-$ /usr/bin/ocamlc.opt -config > /tmp/dune3894fa.output
+$ /usr/bin/ocamlc.opt -config > /tmp/dune8e22ca.output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
