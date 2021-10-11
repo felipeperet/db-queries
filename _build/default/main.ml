@@ -39,7 +39,7 @@ let read_base filename =
      try
        let data = Array.of_list (split_line (In_channel.input_line_exn channel)) in
          data :: (read_file ())
-     with End_of_file ->  In_channel.close channel ; []
+     with End_of_file -> In_channel.close channel ; []
    in
    { card_index = mk_index list_names ; data = read_file () }
 
@@ -56,8 +56,30 @@ let base_ex = read_base "association.dat"
 (* selection criteria *)
 
 (* for string fields *)
-let eq_sfield db s n dc = ((phys_equal) s (field db n dc))
-let nonempty_sfield db n dc = not (phys_equal "" (field db n dc))
+let eq_sfield db s n dc = (String.equal s (field db n dc))
+let nonempty_sfield db n dc = not (String.equal "" (field db n dc))
 
-(* for float field *)
-let tst_ffield r db (v : bool) n dc = r v (Float.of_string (field db n dc))
+(* for float fields *)
+let tst_ffield r v db n dc = r v (Float.of_string (field db n dc))
+let eq_ffield = tst_ffield (Float.equal)
+let lt_ffield = tst_ffield (Float.(<=))
+let gt_ffield = tst_ffield (Float.(>=))
+
+(*   We decide to represent dates in a card as a string with format dd.mm.yyyy.
+ *   In order to be able to define additional comparisons, we also allow the replacement of the day,
+ *  month or year part with the underscore character ('_').
+ *
+ *   Dates are compared according to the lexicographic order of lists of integers of the form [year; month; day].
+ *   To express queries such as: ``is before July 1998'', we use the date pattern: "_.07.1998".
+ *
+ *   Comparing a date with a pattern is accomplished with
+ *  the function tst_dfield which analyses the pattern to create the ad hoc comparison function.
+ *
+ *   To define this generic test function on dates, we need a few auxiliary functions. *)
+
+let split_date = String.split ~on:'.'
+
+let ints_of_string d =
+  try match split_date d with
+      [d;m;y] -> [Int.of_string y; Int.of_string m; Int.of_string d]
+    |  _      -> failwith "Bad date format"

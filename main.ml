@@ -39,7 +39,7 @@ let read_base filename =
      try
        let data = Array.of_list (split_line (In_channel.input_line_exn channel)) in
          data :: (read_file ())
-     with End_of_file ->  In_channel.close channel ; []
+     with End_of_file -> In_channel.close channel ; []
    in
    { card_index = mk_index list_names ; data = read_file () }
 
@@ -59,8 +59,59 @@ let base_ex = read_base "association.dat"
 let eq_sfield db s n dc = (String.equal s (field db n dc))
 let nonempty_sfield db n dc = not (String.equal "" (field db n dc))
 
-(* for float field *)
+(* for float fields *)
 let tst_ffield r v db n dc = r v (Float.of_string (field db n dc))
 let eq_ffield = tst_ffield (Float.equal)
 let lt_ffield = tst_ffield (Float.(<=))
 let gt_ffield = tst_ffield (Float.(>=))
+
+(*   We decide to represent dates in a card as a string with format dd.mm.yyyy.
+ *   In order to be able to define additional comparisons, we also allow the replacement of the day,
+ *  month or year part with the underscore character ('_').
+ *
+ *   Dates are compared according to the lexicographic order of lists of integers of the form [year; month; day].
+ *   To express queries such as: ``is before July 1998'', we use the date pattern: "_.07.1998".
+ *
+ *   Comparing a date with a pattern is accomplished with
+ *  the function tst_dfield which analyses the pattern to create the ad hoc comparison function.
+ *
+ *   To define this generic test function on dates, we need a few auxiliary functions. *)
+
+let split_date = String.split ~on:'.'
+
+let ints_of_string d =
+  try match split_date d with
+      [d;m;y] -> [Int.of_string y; Int.of_string m; Int.of_string d]
+    |  _      -> failwith "Bad date format"
+  with Failure _ -> failwith "Bad date format"
+
+let ints_of_dpat d =
+  let int_of_stringpat = function "_" -> 0 | s -> Int.of_string s in
+  try match split_date d with
+      [d;m;y] -> [ int_of_stringpat y ; int_of_stringpat m ; int_of_stringpat d ]
+    | _ -> failwith "Bad date format"
+  with Failure _ -> failwith "Bad date pattern"
+
+(*  Given a relation r on integers, we now code the test function.
+ *
+ *  It simply consists of implementing the lexicographic order,
+ *  taking into account the particular case of 0: *)
+
+let rec app_dtst r d1 d2 =
+  match d1 , d2 with
+    [] , [] -> false
+  | (0::d1) , (_::d2) -> app_dtst r d1 d2
+  | (n1::d1) , (n2::d2) -> (r n1 n2) || ((n1 = n2) && (app_dtst r d1 d2))
+  | _ , _ -> failwith "Bad date pattern or format"
+
+(* We finally define the generic function tst_dfield
+ * which takes as arguments a relation r, a database db, a pattern dp, a field name nm, and a card dc.
+ * This function checks that the pattern and the field from the card satisfy the relation. *)
+
+let tst_dfield r db dp nm dc =
+  r (ints_of_dpat dp) (ints_of_string (field db nm dc))
+
+(* we now apply it to three relations.  *)
+let eq_dfield = tst_dfield (app_dtst (=))
+let le_dfield = tst_dfield (app_dtst (<=))
+let ge_dfield = tst_dfield (app_dtst (>=))
