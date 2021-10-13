@@ -97,18 +97,18 @@ let ints_of_dpat d =
  *  It simply consists of implementing the lexicographic order,
  *  taking into account the particular case of 0: *)
 
-let rec app_dtst_cmp r d1 d2 =
+let rec eq_dtst d1 d2 =
   match d1 , d2 with
     [] , [] -> true
-  | (0::d1) , (_::d2) -> app_dtst_cmp r d1 d2
-  | (n1::d1) , (n2::d2) -> ((r n1 n2) || (n1 = n2)) && (app_dtst_cmp r d1 d2)
-  | _ , _ -> failwith "Bad date pattern or format"
+  | (0::d1) , (_::d2) -> eq_dtst d1 d2
+  | (n1::d1) , (n2::d2) -> n1 = n2 && eq_dtst d1 d2
+  | _ , _ -> failwith "Dad date pattern or format"
 
-let rec app_dtst_eq r d1 d2 =
+let rec cmp_dtst r d1 d2 =
   match d1 , d2 with
-    [] , [] -> true
-  | (0::d1) , (_::d2) -> app_dtst_eq r d1 d2
-  | (n1::d1) , (n2::d2) -> (r n1 n2) && (app_dtst_eq r d1 d2)
+  | [] , [] -> true
+  | (0::d1) , (_::d2) -> cmp_dtst r d1 d2
+  | (n1::d1) , (n2::d2) -> (r n1 n2) || (n1 = n2 && cmp_dtst r d1 d2)
   | _ , _ -> failwith "Bad date pattern or format"
 
 (* We finally define the generic function tst_dfield
@@ -119,12 +119,9 @@ let tst_dfield r db dp nm dc =
   r (ints_of_dpat dp) (ints_of_string (field db nm dc))
 
 (* we now apply it to three relations.  *)
-let eq_dfield = tst_dfield (app_dtst_eq (=))
-let le_dfield = tst_dfield (app_dtst_cmp (<=))
-let ge_dfield = tst_dfield (app_dtst_cmp (>=))
-
-(* the test "is before July 1998" is written *)
-let before_july1998 = ge_dfield base_ex "_.07.1998" "Date"
+let eq_dfield = tst_dfield eq_dtst
+let after_dfield = tst_dfield (cmp_dtst (<))
+let before_dfield = tst_dfield (cmp_dtst (>))
 
 (* Thus, we can consider a test as a function of type data_card -> bool.
  *  We want to obtain boolean combinations of the results of such functions applied to a given card.
@@ -144,12 +141,15 @@ let not_fun f dc = not (f dc)
 (* using these combinators to define a selecion function for cards
  * whose data field is included in a given range *)
 let date_interval db d1 d2 =
-  and_fold [(le_dfield db d1 "Date") ; (ge_dfield db d2 "Date")]
+  and_fold [(after_dfield db d1 "Date") ; (before_dfield db d2 "Date")]
 
-(* some functions for testing *)
+(* defining some test functions *)
 
 let dates = List.map ~f:(field base_ex "Date") base_ex.data
+(* val dates : string list =
+ *   ["25.12.1998"; "03.03.1997"; "25.12.1998"; "01.03.1999"] *)
 
-let before_july1998_t = List.map ~f:before_july1998 base_ex.data
-let my_birthday_t = List.map ~f:(eq_dfield base_ex "03.03.1997" "Date") base_ex.data
-let interval_t = List.map ~f:(date_interval base_ex "23.11.1996" "02.03.1999") base_ex.data
+let specific_dt p = List.map ~f:(eq_dfield base_ex p "Date") base_ex.data
+let before_dt p = List.map ~f:(before_dfield base_ex p "Date") base_ex.data
+let after_dt p = List.map ~f:(after_dfield base_ex p "Date") base_ex.data
+let interval_dt p1 p2 = List.map ~f:(date_interval base_ex p1 p2) base_ex.data
