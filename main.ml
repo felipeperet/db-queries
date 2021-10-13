@@ -102,7 +102,7 @@ let rec eq_dtst d1 d2 =
     [] , [] -> true
   | (0::d1) , (_::d2) -> eq_dtst d1 d2
   | (n1::d1) , (n2::d2) -> n1 = n2 && eq_dtst d1 d2
-  | _ , _ -> failwith "Dad date pattern or format"
+  | _ , _ -> failwith "Bad date pattern or format"
 
 let rec cmp_dtst r d1 d2 =
   match d1 , d2 with
