@@ -10,20 +10,24 @@ type data_base = { card_index : string -> int ;
                    data : data_card list }
 
 (* access to the field of a card *)
+
 let field base name =
   let i = base.card_index name in fun (card : data_card) -> card.(i)
 
 (* small example *)
+
 let base_ex =
    { data = [ [|"Chailloux"; "Emmanuel"|] ; [|"Manoury"; "Pascal"|] ]  ;
      card_index = function "lastName" -> 0 | "firstName" -> 1
                             | _ -> raise Not_found }
 
 (* getting the lastName field for all cards of the database *)
+
 let last_name = List.map ~f:(field base_ex "lastName") base_ex.data
 
 (* from a list of strings, associates each string with an index
  * corresponding to its position in the list *)
+
 let mk_index list_names =
    let rec make_enum a b = if a > b then [] else a::(make_enum (a+1) b) in
    let list_index = (make_enum 0 ((List.length list_names) - 1)) in
@@ -31,6 +35,7 @@ let mk_index list_names =
    function name -> List.Assoc.find_exn ~equal:String.equal assoc_index_name name
 
 (* function that reads a file of the given format *)
+
 let read_base filename =
    let channel = In_channel.create filename in
    let split_line = String.split ~on:':' in
@@ -44,6 +49,7 @@ let read_base filename =
    { card_index = mk_index list_names ; data = read_file () }
 
 (* opening the database *)
+
 let base_ex = read_base "association.dat"
 
 (* The goal of database processing is to obtain a state of the database.
@@ -56,10 +62,12 @@ let base_ex = read_base "association.dat"
 (* selection criteria *)
 
 (* for string fields *)
+
 let eq_sfield db s n dc = (String.equal s (field db n dc))
 let nonempty_sfield db n dc = not (String.equal "" (field db n dc))
 
 (* for float fields *)
+
 let tst_ffield r v db n dc = r v (Float.of_string (field db n dc))
 let eq_ffield = tst_ffield (Float.equal)
 let lt_ffield = tst_ffield (Float.(<=))
@@ -115,10 +123,12 @@ let rec cmp_dtst r d1 d2 =
  * which takes as arguments a relation r, a database db, a pattern dp, a field name nm, and a card dc.
  *
  * This function checks that the pattern and the field from the card satisfy the relation. *)
+
 let tst_dfield r db dp nm dc =
   r (ints_of_dpat dp) (ints_of_string (field db nm dc))
 
 (* we now apply it to three relations.  *)
+
 let eq_dfield = tst_dfield eq_dtst
 let after_dfield = tst_dfield (cmp_dtst (<))
 let before_dfield = tst_dfield (cmp_dtst (>))
@@ -126,26 +136,32 @@ let before_dfield = tst_dfield (cmp_dtst (>))
 (* Thus, we can consider a test as a function of type data_card -> bool.
  *  We want to obtain boolean combinations of the results of such functions applied to a given card.
  *  To this end, we implement the iterator:  *)
+
 let fold_funs b c fs dc =
   List.fold_right fs ~f:(fun f -> c (f dc)) ~init:b
+
 (* where b is the base value, the function c is the boolean operator,
  * fs is the list of test functions on a field, and dc is a card *)
 
 (* We can obtain the conjunction and the disjunction of a list of tests with: *)
+
 let and_fold fs = fold_funs true (&&) fs
 let or_fold fs = fold_funs false (||) fs
 
 (* negation of a test *)
+
 let not_fun f dc = not (f dc)
 
 (* using these combinators to define a selecion function for cards
  * whose data field is included in a given range *)
+
 let date_interval db d1 d2 =
   and_fold [(after_dfield db d1 "Date") ; (before_dfield db d2 "Date")]
 
 (* defining some test functions *)
 
 let dates = List.map ~f:(field base_ex "Date") base_ex.data
+
 (* val dates : string list =
  *   ["25.12.1998"; "03.03.1997"; "25.12.1998"; "01.03.1999"] *)
 
@@ -153,3 +169,30 @@ let specific_dt p = List.map ~f:(eq_dfield base_ex p "Date") base_ex.data
 let before_dt p = List.map ~f:(before_dfield base_ex p "Date") base_ex.data
 let after_dt p = List.map ~f:(after_dfield base_ex p "Date") base_ex.data
 let interval_dt p1 p2 = List.map ~f:(date_interval base_ex p1 p2) base_ex.data
+
+(* processing and computation *)
+
+(* function that formats the splitting of a line using a given separating character: *)
+
+let format_list c =
+  let s = String.make 1 c in
+  List.fold_left ~f:(fun x y -> if (String.equal x "") then y else x^s^y)  ~init:""
+
+(* returns the fields associated with a given list of names in a given card *)
+
+let extract db ns dc =
+  List.map ~f:(fun n -> field db n dc) ns
+
+(* formatting *)
+
+let format_line db ns dc =
+  (String.uppercase (field db "Lastname" dc))
+  ^" "^(field db "Firstname" dc)
+  ^"\t"^(format_list '\t' (extract db ns dc))
+  ^"\n"
+
+(* testing formatting *)
+
+let test () = List.iter ~f:print_string (List.map ~f:(format_line base_ex []) base_ex.data)
+
+let () = test ()
