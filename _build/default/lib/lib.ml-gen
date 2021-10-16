@@ -1,0 +1,18 @@
+(** @canonical Lib.Computing *)
+module Computing = Lib__Computing
+
+
+(** @canonical Lib.Datatypes *)
+module Datatypes = Lib__Datatypes
+
+
+(** @canonical Lib.Formatting *)
+module Formatting = Lib__Formatting
+
+
+(** @canonical Lib.Processing *)
+module Processing = Lib__Processing
+
+
+(** @canonical Lib.Reading *)
+module Reading = Lib__Reading
