@@ -25,10 +25,10 @@ let () =
   let db = Read.database "../../../data/association.dat" in
   let finished = ref false in
    while not !finished do
-    print_string " 1: List of mail addresses\n";
-    print_string " 2: List of email addresses\n";
-    print_string " 3: Received fees\n";
-    print_string " 0: Exit\n";
+    print_string "1: List of mail addresses\n";
+    print_string "2: List of email addresses\n";
+    print_string "3: Received fees\n";
+    print_string "0: Exit\n";
     print_string "Your choice: ";
     match (Caml.read_int ()) with
       0 -> finished := true
