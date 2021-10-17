@@ -14,6 +14,7 @@ let nonempty_sfield db n dc = not (String.equal "" (field db n dc))
 (* FLOAT FIELDS *)
 
 let tst_ffield r v db n dc = r v (Float.of_string (field db n dc))
+
 let eq_ffield = tst_ffield (Float.equal)
 let lt_ffield = tst_ffield (Float.(<=))
 
