@@ -1,8 +1,8 @@
 open Base
 open Stdio
 
-open Lib
-open Lib.Datatypes
+open Queries
+open Queries.Datatypes
 
 (* list of mail addresses of a given database *)
 let mail_addresses db =
@@ -18,8 +18,7 @@ let email_addresses db =
       ~f:(Process.eq_sfield db "email" "Pref") db.data in
   List.map ~f:(Format.line db ["Email"]) dcs
 
-(* computing the state of the received fees during
- *  an interval *)
+(* computing the state of the received fees during an interval *)
 let fees_state db d1 d2 =
   let dcs =
     List.filter
@@ -38,15 +37,15 @@ let () =
     print_string "3: Received fees\n";
     print_string "0: Exit\n";
     print_string "Your choice: ";
-    match (Caml.read_int ()) with
+    match (Stdlib.read_int ()) with
       0 -> finished := true
     | 1 -> (List.iter ~f:print_string (mail_addresses db))
     | 2 -> (List.iter ~f:print_string (email_addresses db))
     | 3
       -> (print_string "Start date: ";
-          let d1 = Caml.read_line () in
+          let d1 = Stdlib.read_line () in
           print_string "End date: "  ;
-          let d2 = Caml.read_line () in
+          let d2 = Stdlib.read_line () in
          let ls, t = fees_state db d1 d2 in
          List.iter ~f:print_string ls;
          printf "Total: %f\n" t )
