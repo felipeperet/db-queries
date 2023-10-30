@@ -6,7 +6,7 @@
   };
   outputs = { self, flake-utils, opam-nix, nixpkgs }@inputs:
     # Don't forget to put the package name instead of `throw':
-    let package = throw "Put the package name here!";
+    let package = "queries";
     in flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
