@@ -14,7 +14,7 @@ depends: [
   "core"
   "stdio"
   "ocaml"
-  "dune" {>= "3.8"}
+  "dune" {>= "3.0"}
   "utop"
   "ocaml-lsp-server"
   "odoc" {with-doc}
